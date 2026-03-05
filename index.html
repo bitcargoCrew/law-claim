@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Claim $LAW</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              suits: {
+                black: '#0D0D12',
+                gold: '#FFD700',
+                goldMuted: '#C9A84C',
+                goldAntique: '#DAA520',
+                cream: '#F5F0E1',
+                crimson: '#CC1A1A',
+              },
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body { font-family: 'Inter', system-ui, sans-serif; }
+
+      .gradient-gold {
+        background: linear-gradient(135deg, #C9A84C, #FFD700, #DAA520);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .btn-gold {
+        background: linear-gradient(135deg, #C9A84C, #FFD700);
+        color: #0D0D12;
+        font-weight: 700;
+        transition: all 0.2s ease;
+      }
+      .btn-gold:hover {
+        background: linear-gradient(135deg, #FFD700, #DAA520);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
+      }
+      .btn-gold:active { transform: translateY(0); }
+
+      .btn-connect {
+        background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
+        border: 1px solid rgba(201, 168, 76, 0.3);
+        color: #C9A84C;
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+      .btn-connect:hover {
+        border-color: rgba(255, 215, 0, 0.5);
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+      }
+
+      .card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(10px);
+      }
+
+      .status-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        animation: pulse-dot 2s ease-in-out infinite;
+      }
+      @keyframes pulse-dot {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+      }
+
+      .fade-in {
+        animation: fadeIn 0.4s ease-out;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .spinner {
+        border: 3px solid rgba(201, 168, 76, 0.2);
+        border-top-color: #FFD700;
+        border-radius: 50%;
+        width: 28px; height: 28px;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      .avatar-placeholder {
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 600; font-size: 0.75rem; text-transform: uppercase;
+      }
+
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: rgba(201, 168, 76, 0.3); border-radius: 3px; }
+    </style>
+  </head>
+  <body class="bg-suits-black text-white min-h-screen flex items-center justify-center">
+    <div id="app" class="w-full max-w-sm mx-auto px-4 py-6">
+
+      <!-- Header -->
+      <header class="text-center mb-6">
+        <h1 class="text-2xl font-bold gradient-gold mb-1">Claim $LAW</h1>
+        <p class="text-xs text-gray-500">Follow Harvey Specter. Get 10,000 $LAW.</p>
+      </header>
+
+      <!-- State: Connect -->
+      <div id="state-connect" class="text-center fade-in">
+        <div class="card rounded-2xl p-6 mb-4">
+          <div class="mb-4">
+            <svg class="w-12 h-12 mx-auto text-suits-goldMuted opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <p class="text-sm text-gray-400 mb-5">Connect your Universal Profile to check eligibility</p>
+          <button onclick="connectUP()" class="btn-connect w-full py-3 rounded-xl text-sm">
+            Connect UP
+          </button>
+        </div>
+        <p id="no-extension" class="hidden text-xs text-red-400 mt-2">
+          No UP extension found. Install the
+          <a href="https://chromewebstore.google.com/detail/universal-profiles/abpickdkkbnbcoepogfhkhennhfhehfn"
+             target="_blank" class="underline hover:text-red-300">Universal Profile extension</a>.
+        </p>
+      </div>
+
+      <!-- State: Loading -->
+      <div id="state-loading" class="hidden text-center py-12 fade-in">
+        <div class="spinner mx-auto mb-3"></div>
+        <p class="text-sm text-gray-500">Checking eligibility...</p>
+      </div>
+
+      <!-- State: Not Following -->
+      <div id="state-not-following" class="hidden fade-in">
+        <div class="card rounded-2xl p-5 text-center">
+          <div id="profile-not-following"></div>
+          <div class="mt-4 mb-2">
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+              Not following
+            </span>
+          </div>
+          <p class="text-sm text-gray-400 mb-5">Follow Harvey Specter to claim <span class="text-suits-gold font-semibold">10,000 $LAW</span></p>
+          <button id="follow-btn" onclick="followHarvey()" class="btn-gold w-full py-3 rounded-xl text-sm">
+            Follow & Claim
+          </button>
+          <div id="follow-loading" class="hidden py-3">
+            <div class="spinner mx-auto mb-2"></div>
+            <p class="text-xs text-gray-500">Confirm in your UP extension...</p>
+          </div>
+          <p id="follow-error" class="hidden text-xs text-red-400 mt-3"></p>
+        </div>
+      </div>
+
+      <!-- State: Eligible (following but no $LAW yet) -->
+      <div id="state-eligible" class="hidden fade-in">
+        <div class="card rounded-2xl p-5 text-center">
+          <div id="profile-eligible"></div>
+          <div class="mt-4 mb-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-suits-gold/10 text-suits-gold border border-suits-gold/20">
+              <span class="status-dot bg-suits-gold"></span>
+              Eligible
+            </span>
+          </div>
+          <p class="text-suits-gold text-2xl font-bold font-mono mb-1">10,000 $LAW</p>
+          <p class="text-sm text-gray-400 mb-4">Your airdrop is on the way!</p>
+          <div class="bg-suits-gold/5 rounded-xl p-3 border border-suits-gold/10">
+            <p class="text-xs text-gray-500">You're following Harvey. Your $LAW will arrive in the next airdrop cycle.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- State: Claimed (has $LAW) -->
+      <div id="state-claimed" class="hidden fade-in">
+        <div class="card rounded-2xl p-5 text-center">
+          <div id="profile-claimed"></div>
+          <div class="mt-4 mb-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              In the Firm
+            </span>
+          </div>
+          <p class="text-suits-gold text-2xl font-bold font-mono mb-1" id="law-balance"></p>
+          <p class="text-xs text-gray-500 mb-4">$LAW balance</p>
+          <a href="https://universaleverything.io/0x36c2034025705AD0e681d860f0Fd51e84c37b629"
+             target="_blank"
+             class="inline-block text-xs text-suits-goldMuted hover:text-suits-gold transition-colors underline">
+            View Harvey's Profile
+          </a>
+        </div>
+      </div>
+
+      <!-- State: Already Harvey -->
+      <div id="state-harvey" class="hidden fade-in">
+        <div class="card rounded-2xl p-5 text-center">
+          <p class="text-suits-gold text-lg font-bold mb-2">That's you, Harvey.</p>
+          <p class="text-sm text-gray-500">You can't claim your own tokens.</p>
+        </div>
+      </div>
+
+      <!-- State: Error -->
+      <div id="state-error" class="hidden text-center py-8 fade-in">
+        <p class="text-red-400 text-sm mb-3" id="error-msg"></p>
+        <button onclick="location.reload()" class="text-xs text-suits-goldMuted hover:underline">Try again</button>
+      </div>
+
+    </div>
+
+    <script>
+      // ─── Config ──────────────────────────────────────────────────────
+      const HARVEY_ADDRESS = '0x36c2034025705AD0e681d860f0Fd51e84c37b629'
+      const LSP26_ADDRESS = '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA'
+      const LAW_ADDRESS = '0x012f988480cd6ee2b88dfa5e6877cc4bdff96f5a'
+      const INDEXER = 'https://envio.lukso-mainnet.universal.tech/v1/graphql'
+      const IPFS_GATEWAY = 'https://api.universalprofile.cloud/ipfs/'
+      const CHAIN_ID_HEX = '0x2a' // 42
+
+      let connectedAddress = null
+
+      // ─── Dark mode (always dark for Suits theme) ────────────────────
+      document.documentElement.classList.add('dark')
+
+      // ─── State management ───────────────────────────────────────────
+      function showState(id) {
+        const states = ['state-connect', 'state-loading', 'state-not-following',
+                        'state-eligible', 'state-claimed', 'state-harvey', 'state-error']
+        states.forEach(s => document.getElementById(s).classList.add('hidden'))
+        document.getElementById(id).classList.remove('hidden')
+      }
+
+      // ─── GraphQL helper ─────────────────────────────────────────────
+      async function gql(query) {
+        const res = await fetch(INDEXER, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query }),
+        })
+        if (!res.ok) throw new Error(`Indexer error: ${res.status}`)
+        const json = await res.json()
+        if (json.errors) throw new Error(json.errors[0].message)
+        return json.data
+      }
+
+      // ─── IPFS URL helper ───────────────────────────────────────────
+      function ipfsUrl(url) {
+        if (!url) return null
+        if (url.startsWith('http')) return url
+        if (url.startsWith('ipfs://')) return IPFS_GATEWAY + url.slice(7)
+        if (url.startsWith('Qm') || url.startsWith('baf')) return IPFS_GATEWAY + url
+        return url
+      }
+
+      // ─── Address color for fallback avatar ─────────────────────────
+      function addrColor(address) {
+        let h = 0
+        for (let i = 2; i < address.length; i++) h = address.charCodeAt(i) + ((h << 5) - h)
+        return `hsl(${Math.abs(h) % 360}, 65%, 55%)`
+      }
+
+      // ─── Render profile card ───────────────────────────────────────
+      function renderProfile(containerId, profile) {
+        const el = document.getElementById(containerId)
+        const name = profile.name || (profile.address.slice(0, 6) + '...' + profile.address.slice(-4))
+        const nameClass = profile.name ? 'text-sm font-semibold text-white' : 'text-xs font-mono text-gray-400'
+
+        let avatarHtml
+        if (profile.imageUrl) {
+          avatarHtml = `<img src="${profile.imageUrl}" alt="" class="w-14 h-14 rounded-full object-cover mx-auto border-2 border-suits-gold/20"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+            <span class="avatar-placeholder w-14 h-14 rounded-full mx-auto border-2 border-suits-gold/20"
+              style="display:none;background:${addrColor(profile.address)};color:white;">${profile.address.slice(2,4)}</span>`
+        } else {
+          avatarHtml = `<span class="avatar-placeholder w-14 h-14 rounded-full mx-auto border-2 border-suits-gold/20"
+            style="background:${addrColor(profile.address)};color:white;">${profile.address.slice(2,4)}</span>`
+        }
+
+        el.innerHTML = `
+          <div class="flex flex-col items-center gap-2">
+            ${avatarHtml}
+            <span class="${nameClass}">${name}</span>
+          </div>
+        `
+      }
+
+      // ─── Fetch user profile ────────────────────────────────────────
+      async function fetchProfile(address) {
+        const data = await gql(`{
+          Profile_by_pk(id: "${address.toLowerCase()}") {
+            name
+            profileImages(where: { error: { _is_null: true } }, order_by: { width: asc }) {
+              width src url
+            }
+          }
+        }`)
+        const p = data.Profile_by_pk
+        let imageUrl = null
+        if (p && p.profileImages && p.profileImages.length > 0) {
+          let best = p.profileImages[0], bestDiff = Math.abs(best.width - 200)
+          for (const img of p.profileImages) {
+            const diff = Math.abs(img.width - 200)
+            if (diff < bestDiff) { best = img; bestDiff = diff }
+          }
+          imageUrl = ipfsUrl(best.src || best.url)
+        }
+        return { address, name: p?.name || null, imageUrl }
+      }
+
+      // ─── Check if user follows Harvey ──────────────────────────────
+      async function isFollowing(userAddress) {
+        const data = await gql(`{
+          Profile_by_pk(id: "${HARVEY_ADDRESS.toLowerCase()}") {
+            followed(where: { follower_id: { _eq: "${userAddress.toLowerCase()}" } }) {
+              follower_id
+            }
+          }
+        }`)
+        const followed = data.Profile_by_pk?.followed || []
+        return followed.length > 0
+      }
+
+      // ─── Check $LAW balance ────────────────────────────────────────
+      async function getLawBalance(userAddress) {
+        const data = await gql(`{
+          Hold(where: {
+            asset_id: { _eq: "${LAW_ADDRESS}" }
+            profile_id: { _eq: "${userAddress.toLowerCase()}" }
+          }) {
+            balance
+          }
+        }`)
+        const holds = data.Hold || []
+        return holds.length > 0 ? holds[0].balance : '0'
+      }
+
+      // ─── Format balance ────────────────────────────────────────────
+      function formatBalance(raw) {
+        if (!raw || raw === '0') return '0'
+        const str = raw.padStart(19, '0')
+        const intPart = str.slice(0, str.length - 18) || '0'
+        const decPart = str.slice(str.length - 18, str.length - 16)
+        return parseInt(intPart).toLocaleString('en-US') + '.' + decPart
+      }
+
+      // ─── Connect Universal Profile ─────────────────────────────────
+      async function connectUP() {
+        const provider = window.lukso || window.ethereum
+        if (!provider) {
+          document.getElementById('no-extension').classList.remove('hidden')
+          return
+        }
+
+        try {
+          // Ensure correct chain
+          try {
+            await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: CHAIN_ID_HEX }] })
+          } catch (e) {
+            // Chain switch failed — may already be on LUKSO
+          }
+
+          const accounts = await provider.request({ method: 'eth_requestAccounts' })
+          if (!accounts || accounts.length === 0) return
+
+          connectedAddress = accounts[0]
+          await checkEligibility()
+        } catch (err) {
+          if (err.code === 4001) return // User rejected
+          showState('state-error')
+          document.getElementById('error-msg').textContent = err.message || 'Connection failed'
+        }
+      }
+
+      // ─── Check eligibility ─────────────────────────────────────────
+      async function checkEligibility() {
+        showState('state-loading')
+
+        try {
+          // Is this Harvey himself?
+          if (connectedAddress.toLowerCase() === HARVEY_ADDRESS.toLowerCase()) {
+            showState('state-harvey')
+            return
+          }
+
+          const [profile, following, balance] = await Promise.all([
+            fetchProfile(connectedAddress),
+            isFollowing(connectedAddress),
+            getLawBalance(connectedAddress),
+          ])
+
+          const hasLaw = balance !== '0' && balance !== null
+
+          if (hasLaw) {
+            renderProfile('profile-claimed', profile)
+            document.getElementById('law-balance').textContent = formatBalance(balance)
+            showState('state-claimed')
+          } else if (following) {
+            renderProfile('profile-eligible', profile)
+            showState('state-eligible')
+          } else {
+            renderProfile('profile-not-following', profile)
+            showState('state-not-following')
+          }
+        } catch (err) {
+          showState('state-error')
+          document.getElementById('error-msg').textContent = err.message || 'Failed to check eligibility'
+        }
+      }
+
+      // ─── Follow Harvey via browser extension ───────────────────────
+      async function followHarvey() {
+        const provider = window.lukso || window.ethereum
+        if (!provider) return
+
+        const btn = document.getElementById('follow-btn')
+        const loading = document.getElementById('follow-loading')
+        const errorEl = document.getElementById('follow-error')
+
+        btn.classList.add('hidden')
+        loading.classList.remove('hidden')
+        errorEl.classList.add('hidden')
+
+        try {
+          // Encode LSP26.follow(harveyAddress) call
+          // function selector: follow(address) = 0x4dbf27cc
+          const followSelector = '0x4dbf27cc'
+          const paddedAddress = HARVEY_ADDRESS.slice(2).toLowerCase().padStart(64, '0')
+          const data = followSelector + paddedAddress
+
+          const txHash = await provider.request({
+            method: 'eth_sendTransaction',
+            params: [{
+              from: connectedAddress,
+              to: LSP26_ADDRESS,
+              data: data,
+              value: '0x0',
+            }],
+          })
+
+          // Wait a moment for indexer to catch up, then re-check
+          loading.querySelector('p').textContent = 'Following... waiting for confirmation'
+
+          // Poll for follow status
+          let attempts = 0
+          const poll = setInterval(async () => {
+            attempts++
+            const nowFollowing = await isFollowing(connectedAddress)
+            if (nowFollowing || attempts >= 15) {
+              clearInterval(poll)
+              await checkEligibility()
+            }
+          }, 4000)
+        } catch (err) {
+          btn.classList.remove('hidden')
+          loading.classList.add('hidden')
+          if (err.code === 4001) {
+            errorEl.textContent = 'Transaction rejected'
+          } else {
+            errorEl.textContent = err.message || 'Follow failed'
+          }
+          errorEl.classList.remove('hidden')
+        }
+      }
+
+      // ─── Listen for account changes ────────────────────────────────
+      function setupListeners() {
+        const provider = window.lukso || window.ethereum
+        if (!provider) return
+        provider.on?.('accountsChanged', (accounts) => {
+          if (accounts.length > 0) {
+            connectedAddress = accounts[0]
+            checkEligibility()
+          } else {
+            connectedAddress = null
+            showState('state-connect')
+          }
+        })
+      }
+
+      // ─── Boot ──────────────────────────────────────────────────────
+      setupListeners()
+    </script>
+  </body>
+</html>
