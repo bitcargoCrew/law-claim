@@ -113,19 +113,17 @@
     <div id="app" class="w-full max-w-sm mx-auto px-4 py-6">
 
       <!-- Header -->
-      <header class="text-center mb-6">
-        <div class="flex items-center justify-between mb-1">
-          <div class="w-8"></div>
-          <h1 class="text-2xl font-bold gradient-gold">Claim $LAW</h1>
-          <button id="disconnect-btn" onclick="disconnect()" title="Switch account"
-            class="hidden w-8 h-8 rounded-lg hover:bg-white/5 transition-colors flex items-center justify-center">
-            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </button>
-        </div>
+      <header class="text-center mb-6 relative">
+        <h1 class="text-2xl font-bold gradient-gold mb-1">Claim $LAW</h1>
         <p class="text-xs text-gray-500">Follow Harvey Specter. Get 10,000 $LAW.</p>
+        <button id="disconnect-btn" onclick="disconnect()" title="Switch account"
+          class="hidden absolute top-0 right-0 w-8 h-8 rounded-lg hover:bg-white/5 transition-colors items-center justify-center"
+          style="display:none;">
+          <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+        </button>
       </header>
 
       <!-- State: Connect -->
@@ -488,7 +486,7 @@
       // ─── Disconnect / switch account ─────────────────────────────
       function disconnect() {
         connectedAddress = null
-        document.getElementById('disconnect-btn').classList.add('hidden')
+        document.getElementById('disconnect-btn').style.display = 'none'
         showState('state-connect')
       }
 
@@ -496,9 +494,9 @@
       function updateDisconnectBtn() {
         const btn = document.getElementById('disconnect-btn')
         if (connectedAddress) {
-          btn.classList.remove('hidden')
+          btn.style.display = 'flex'
         } else {
-          btn.classList.add('hidden')
+          btn.style.display = 'none'
         }
       }
 
