@@ -114,7 +114,17 @@
 
       <!-- Header -->
       <header class="text-center mb-6">
-        <h1 class="text-2xl font-bold gradient-gold mb-1">Claim $LAW</h1>
+        <div class="flex items-center justify-between mb-1">
+          <div class="w-8"></div>
+          <h1 class="text-2xl font-bold gradient-gold">Claim $LAW</h1>
+          <button id="disconnect-btn" onclick="disconnect()" title="Switch account"
+            class="hidden w-8 h-8 rounded-lg hover:bg-white/5 transition-colors flex items-center justify-center">
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
+        </div>
         <p class="text-xs text-gray-500">Follow Harvey Specter. Get 10,000 $LAW.</p>
       </header>
 
@@ -296,17 +306,31 @@
         `
       }
 
-      // ─── Fetch user profile ────────────────────────────────────────
-      async function fetchProfile(address) {
+      // ─── Fetch all data in one query ────────────────────────────────
+      async function fetchAllData(userAddress) {
+        const addr = userAddress.toLowerCase()
         const data = await gql(`{
-          Profile_by_pk(id: "${address.toLowerCase()}") {
+          userProfile: Profile_by_pk(id: "${addr}") {
             name
             profileImages(where: { error: { _is_null: true } }, order_by: { width: asc }) {
               width src url
             }
           }
+          harvey: Profile_by_pk(id: "${HARVEY_ADDRESS.toLowerCase()}") {
+            followed(where: { follower_id: { _eq: "${addr}" } }) {
+              follower_id
+            }
+          }
+          Hold(where: {
+            asset_id: { _eq: "${LAW_ADDRESS}" }
+            profile_id: { _eq: "${addr}" }
+          }) {
+            balance
+          }
         }`)
-        const p = data.Profile_by_pk
+
+        // Parse profile
+        const p = data.userProfile
         let imageUrl = null
         if (p && p.profileImages && p.profileImages.length > 0) {
           let best = p.profileImages[0], bestDiff = Math.abs(best.width - 200)
@@ -316,34 +340,17 @@
           }
           imageUrl = ipfsUrl(best.src || best.url)
         }
-        return { address, name: p?.name || null, imageUrl }
-      }
+        const profile = { address: userAddress, name: p?.name || null, imageUrl }
 
-      // ─── Check if user follows Harvey ──────────────────────────────
-      async function isFollowing(userAddress) {
-        const data = await gql(`{
-          Profile_by_pk(id: "${HARVEY_ADDRESS.toLowerCase()}") {
-            followed(where: { follower_id: { _eq: "${userAddress.toLowerCase()}" } }) {
-              follower_id
-            }
-          }
-        }`)
-        const followed = data.Profile_by_pk?.followed || []
-        return followed.length > 0
-      }
+        // Parse follow status
+        const followed = data.harvey?.followed || []
+        const isFollowing = followed.length > 0
 
-      // ─── Check $LAW balance ────────────────────────────────────────
-      async function getLawBalance(userAddress) {
-        const data = await gql(`{
-          Hold(where: {
-            asset_id: { _eq: "${LAW_ADDRESS}" }
-            profile_id: { _eq: "${userAddress.toLowerCase()}" }
-          }) {
-            balance
-          }
-        }`)
+        // Parse balance
         const holds = data.Hold || []
-        return holds.length > 0 ? holds[0].balance : '0'
+        const balance = holds.length > 0 ? holds[0].balance : '0'
+
+        return { profile, isFollowing, balance }
       }
 
       // ─── Format balance ────────────────────────────────────────────
@@ -375,6 +382,7 @@
           if (!accounts || accounts.length === 0) return
 
           connectedAddress = accounts[0]
+          updateDisconnectBtn()
           await checkEligibility()
         } catch (err) {
           if (err.code === 4001) return // User rejected
@@ -394,11 +402,7 @@
             return
           }
 
-          const [profile, following, balance] = await Promise.all([
-            fetchProfile(connectedAddress),
-            isFollowing(connectedAddress),
-            getLawBalance(connectedAddress),
-          ])
+          const { profile, isFollowing, balance } = await fetchAllData(connectedAddress)
 
           const hasLaw = balance !== '0' && balance !== null
 
@@ -406,7 +410,7 @@
             renderProfile('profile-claimed', profile)
             document.getElementById('law-balance').textContent = formatBalance(balance)
             showState('state-claimed')
-          } else if (following) {
+          } else if (isFollowing) {
             renderProfile('profile-eligible', profile)
             showState('state-eligible')
           } else {
@@ -456,12 +460,16 @@
           let attempts = 0
           const poll = setInterval(async () => {
             attempts++
-            const nowFollowing = await isFollowing(connectedAddress)
-            if (nowFollowing || attempts >= 15) {
-              clearInterval(poll)
-              await checkEligibility()
+            try {
+              const { isFollowing: nowFollowing } = await fetchAllData(connectedAddress)
+              if (nowFollowing || attempts >= 15) {
+                clearInterval(poll)
+                await checkEligibility()
+              }
+            } catch (e) {
+              if (attempts >= 15) clearInterval(poll)
             }
-          }, 4000)
+          }, 5000)
         } catch (err) {
           btn.classList.remove('hidden')
           loading.classList.add('hidden')
@@ -474,6 +482,23 @@
         }
       }
 
+      // ─── Disconnect / switch account ─────────────────────────────
+      function disconnect() {
+        connectedAddress = null
+        document.getElementById('disconnect-btn').classList.add('hidden')
+        showState('state-connect')
+      }
+
+      // ─── Show disconnect button when connected ─────────────────────
+      function updateDisconnectBtn() {
+        const btn = document.getElementById('disconnect-btn')
+        if (connectedAddress) {
+          btn.classList.remove('hidden')
+        } else {
+          btn.classList.add('hidden')
+        }
+      }
+
       // ─── Listen for account changes ────────────────────────────────
       function setupListeners() {
         const provider = window.lukso || window.ethereum
@@ -481,10 +506,10 @@
         provider.on?.('accountsChanged', (accounts) => {
           if (accounts.length > 0) {
             connectedAddress = accounts[0]
+            updateDisconnectBtn()
             checkEligibility()
           } else {
-            connectedAddress = null
-            showState('state-connect')
+            disconnect()
           }
         })
       }
