@@ -362,22 +362,24 @@
         return parseInt(intPart).toLocaleString('en-US') + '.' + decPart
       }
 
+      // ─── Get LUKSO provider (ignore MetaMask) ─────────────────────
+      function getProvider() {
+        // Always prefer window.lukso (UP Browser Extension)
+        if (window.lukso) return window.lukso
+        // Fallback: check if window.ethereum is LUKSO (not MetaMask)
+        if (window.ethereum && window.ethereum.isUniversalProfileExtension) return window.ethereum
+        return null
+      }
+
       // ─── Connect Universal Profile ─────────────────────────────────
       async function connectUP() {
-        const provider = window.lukso || window.ethereum
+        const provider = getProvider()
         if (!provider) {
           document.getElementById('no-extension').classList.remove('hidden')
           return
         }
 
         try {
-          // Ensure correct chain
-          try {
-            await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: CHAIN_ID_HEX }] })
-          } catch (e) {
-            // Chain switch failed — may already be on LUKSO
-          }
-
           const accounts = await provider.request({ method: 'eth_requestAccounts' })
           if (!accounts || accounts.length === 0) return
 
@@ -425,7 +427,7 @@
 
       // ─── Follow Harvey via browser extension ───────────────────────
       async function followHarvey() {
-        const provider = window.lukso || window.ethereum
+        const provider = getProvider()
         if (!provider) return
 
         const btn = document.getElementById('follow-btn')
@@ -501,7 +503,7 @@
 
       // ─── Listen for account changes ────────────────────────────────
       function setupListeners() {
-        const provider = window.lukso || window.ethereum
+        const provider = getProvider()
         if (!provider) return
         provider.on?.('accountsChanged', (accounts) => {
           if (accounts.length > 0) {
